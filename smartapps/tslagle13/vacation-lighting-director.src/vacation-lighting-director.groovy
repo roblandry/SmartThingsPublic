@@ -1,10 +1,8 @@
 /**
  *  Vacation Lighting Director
- * 
- *  Version  2.4 - Added information paragraphs
- * 
- *  Source code can be found here: https://github.com/tslagle13/SmartThings/blob/master/smartapps/tslagle13/vacation-lighting-director.groovy
  *
+ *  Version 1.0
+ * 
  *  Copyright 2015 Tim Slagle
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -12,9 +10,33 @@
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
+ *	The original licensing applies, with the following exceptions:
+ *		1.	These modifications may NOT be used without freely distributing all these modifications freely
+ *			and without limitation, in source form.	 The distribution may be met with a link to source code
+ *			with these modifications.
+ *		2.	These modifications may NOT be used, directly or indirectly, for the purpose of any type of
+ *			monetary gain.	These modifications may not be used in a larger entity which is being sold,
+ *			leased, or anything other than freely given.
+ *		3.	To clarify 1 and 2 above, if you use these modifications, it must be a free project, and
+ *			available to anyone with "no strings attached."	 (You may require a free registration on
+ *			a free website or portal in order to distribute the modifications.)
+ *		4.	The above listed exceptions to the original licensing do not apply to the holder of the
+ *			copyright of the original work.	 The original copyright holder can use the modifications
+ *			to hopefully improve their original work.  In that event, this author transfers all claim
+ *			and ownership of the modifications to "SmartThings."
+ *
+ *	Original Copyright information:
+ *
+ *	Copyright 2014 SmartThings
+ *
+ *	Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *	in compliance with the License. You may obtain a copy of the License at:
+ *
+ *		http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *	Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *	on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *	for the specific language governing permissions and limitations under the License.
  *
  */
 
@@ -24,166 +46,50 @@ definition(
     name: "Vacation Lighting Director",
     namespace: "tslagle13",
     author: "Tim Slagle",
-    category: "Safety & Security",
-    description: "Randomly turn on/off lights to simulate the appearance of a occupied home while you are away.",
+    description: "Randomly turn on/off lights to simulate the apperance of a occupied home while you are away.",
     iconUrl: "http://icons.iconarchive.com/icons/custom-icon-design/mono-general-2/512/settings-icon.png",
     iconX2Url: "http://icons.iconarchive.com/icons/custom-icon-design/mono-general-2/512/settings-icon.png"
 )
 
 preferences {
-    page name:"pageSetup"
-    page name:"Setup"
-    page name:"Settings"
+ page(name: "Setup", title: "", nextPage:"Settings") { 
+ section("Which mode change triggers the simulator? (This app will only run in selected mode(s))") {
+		input "newMode", "mode", title: "Which?", multiple: true, required: false, refreshAfterSelection:true
+	}
+  section("Light switches to turn on/off"){
+    input "switches", "capability.switch", title: "Switches", multiple: true, required: true, refreshAfterSelection:true
+  }
+  section("How often to cycle the lights"){
+    input "frequency_minutes", "number", title: "Minutes?"
+  }
+  section("Number of active lights at any given time"){
+    input "number_of_active_lights", "number", title: "Number of active lights"
+  }
+  section("People") {
+			input "people", "capability.presenceSensor", title: "If these people are home do not change light status", required: false, multiple: true,  refreshAfterSelection:true
+		}
+  }
+ page(name: "Settings", title: "", install:true, uninstall:true, refreshAfterSelection:true) { 
+ section("Delay to start simulator... (defaults to 2 min)") {
+    	input "falseAlarmThreshold", "decimal", title: "Number of minutes", required: false
+  	}
 
-}
-
-// Show setup page
-def pageSetup() {
-
-    def pageProperties = [
-        name:       "pageSetup",
-        title:      "Status",
-        nextPage:   null,
-        install:    true,
-        uninstall:  true
-    ]
-
-	return dynamicPage(pageProperties) {
-    	section(""){
-        	paragraph "This app can be used to make your home seem occupied anytime you are away from your home. " +
-			"Please use each othe the sections below to setup the different preferences to your liking. " +
-			"I recommend this app be used with at least two away modes.  An example would be 'Away Day' 'and Away Night'. " 
-        }
-        section("Setup Menu") {
-            href "Setup", title: "Setup", description: "", state:greyedOut()
-            href "Settings", title: "Settings", description: "", state: greyedOutSettings()
-            }
-        section([title:"Options", mobileOnly:true]) {
-            label title:"Assign a name", required:false
-        }
-    }
-}
-
-// Show "Setup" page
-def Setup() {
-
-    def newMode = [
-        name:       	"newMode",
-        type:       	"mode",
-        title:      	"Which?",
-        multiple:   	true,
-        required:   	true
-    ]
-    def switches = [
-        name:       	"switches",
-        type:       	"capability.switch",
-        title:      	"Switches",
-        multiple:   	true,
-        required:   	true
-    ]
-    
-    def frequency_minutes = [
-        name:       	"frequency_minutes",
-        type:       	"number",
-        title:      	"Minutes?",
-        required:	true
-    ]
-    
-    def number_of_active_lights = [
-        name:       	"number_of_active_lights",
-        type:       	"number",
-        title:      	"Number of active lights",
-        required:	true,
-    ]
-    
-    def people = [
-        name:       "people",
-        type:       "capability.presenceSensor",
-        title:      "If these people are home do not change light status",
-        required:	true,
-        multiple:	true
-    ]
-    
-    def pageName = "Setup"
-    
-    def pageProperties = [
-        name:       "Setup",
-        title:      "Setup",
-        nextPage:   "pageSetup"
-    ]
-
-    return dynamicPage(pageProperties) {
-
-		section(""){            
-                    paragraph "In this section you need to setup the deatils of how you want your lighting to be affected while " +
-                    paragraph "you are away.  All of these settings are required in order for the simulator to run correctly."
-        }
-        section("Which mode change triggers the simulator? (This app will only run in selected mode(s))") {
-                    input newMode           
-        }
-        section("Light switches to turn on/off") {
-                    input switches           
-        }
-        section("How often to cycle the lights") {
-                    input frequency_minutes            
-        }
-        section("Number of active lights at any given time") {
-                    input number_of_active_lights           
-        }    
-        section("People") {
-                    input people            
-        }
-    }
-    
-}
-
-// Show "Setup" page
-def Settings() {
-
-    def falseAlarmThreshold = [
-        name:       "falseAlarmThreshold",
-        type:       "decimal",
-        title:      "Default is 2 minutes",
-        required:	false
-    ]
-    def days = [
-        name:       "days",
-        type:       "enum",
-        title:      "Only on certain days of the week",
-        multiple:   true,
-        required:   false,
-        options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    ]
-    
-    def pageName = "Settings"
-    
-    def pageProperties = [
-        name:       "Settings",
-        title:      "Settings",
-        nextPage:   "pageSetup"
-    ]
-
-    return dynamicPage(pageProperties) {
-
-		section(""){              
-                    paragraph "In this section you can restrict how your simulator runs.  For instance you can restrict on which days it will run " +
-                    paragraph "as well as a delay for the simulator to start after it is in the correct mode.  Delaying the simulator helps with false starts based on a incorrect mode change."
-        }
-        section("Delay to start simulator") {
-                    input falseAlarmThreshold
-        }
-        section("More options") {
-                    href "timeIntervalInput", title: "Only during a certain time", description: getTimeLabel(starting, ending), state: greyedOutTime(starting, ending), refreshAfterSelection:true
-                    input days
-        } 
-    }   
-}
-
+   section([mobileOnly:true]) {
+			label title: "Assign a name", required: false
+		} 
+        section("More options", refreshAfterSelection:true) {
+			href "timeIntervalInput", title: "Only during a certain time", description: timeLabel ?: "Tap to set", state: timeLabel ? "complete" : "incomplete", refreshAfterSelection:true
+			input "days", "enum", title: "Only on certain days of the week", multiple: true, required: false,
+				options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+		}
+  }
 page(name: "timeIntervalInput", title: "Only during a certain time", refreshAfterSelection:true) {
 		section {
-			input "starting", "time", title: "Starting", required: false 
-			input "ending", "time", title: "Ending", required: false 
+			input "starting", "time", title: "Starting (both are required)", required: false, refreshAfterSelection:true
+			input "ending", "time", title: "Ending (both are required)", required: false, refreshAfterSelection:true
 		}
+        }  
+
 }
 
 def installed() {
@@ -205,12 +111,27 @@ def initialize(){
 
 def modeChangeHandler(evt) {
 	log.debug "Mode change to: ${evt.value}"
-		def delay = (falseAlarmThreshold != null && falseAlarmThreshold != "") ? falseAlarmThreshold * 60 : 2 * 60  
+    // Have to handle when they select one mode or multiple
+    if (newMode.any{ it == evt.value } || newMode == evt.value) {
+		def delay = (falseAlarmThreshold != null && falseAlarmThreshold != "") ? falseAlarmThreshold * 60 : 2 * 60 
     	runIn(delay, scheduleCheck)
+    }
+    else if(people){
+    //don't turn off lights if anyone is home
+		if(anyoneIsHome()){
+		log.debug("Stopping Check for Light")
+    	}
+        else{
+    log.debug("Stopping Check for Light and turning off all lights")
+	switches.off()
+    }
+}    
 }
 
 
-//Main logic to pick a random set of lights from the large set of lights to turn on and then turn the rest off
+// We want to turn off all the lights
+// Then we want to take a random set of lights and turn those on
+// Then run it again when the frequency demands it
 def scheduleCheck(evt) {
 if(allOk){
 log.debug("Running")
@@ -246,7 +167,7 @@ else if (modeOk) {
 //if none is ok turn off frequency check and turn off lights.
 else if(people){
     //don't turn off lights if anyone is home
-		if(someoneIsHome()){
+		if(anyoneIsHome()){
 		log.debug("Stopping Check for Light")
     	}
         else{
@@ -254,12 +175,12 @@ else if(people){
 	switches.off()
     }
 }
-}      
+}    
 
 
 //below is used to check restrictions
 private getAllOk() {
-	modeOk && daysOk && timeOk && homeIsEmpty
+	modeOk && daysOk && timeOk
 }
 
 
@@ -294,61 +215,10 @@ private getTimeOk() {
 		def stop = timeToday(ending).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
 	}
-    
-    else if (starting){
-    	result = currTime >= start
-    }
-    else if (ending){
-    	result = currTime <= stop
-    }
-    
 	log.trace "timeOk = $result"
 	result
 }
 
-private getHomeIsEmpty() {
-  def result = true
-
-  if(people?.findAll { it?.currentPresence == "present" }) {
-    result = false
-  }
-
-  log.debug("homeIsEmpty: ${result}")
-
-  return result
-}
-
-private getSomeoneIsHome() {
-  def result = false
-
-  if(people?.findAll { it?.currentPresence == "present" }) {
-    result = true
-  }
-
-  log.debug("anyoneIsHome: ${result}")
-
-  return result
-}
-
-
-//gets the label for time restriction. Label phrasing changes depending on if there is both start and stop times or just one start/stop time.
-def getTimeLabel(starting, ending){
-
-	def timeLabel = "Tap to set"
-	
-    if(starting && ending){
-    	timeLabel = "Between" + " " + hhmm(starting) + " "  + "and" + " " +  hhmm(ending)
-    }
-    else if (starting) {
-		timeLabel = "Start at" + " " + hhmm(starting)
-    }
-    else if(ending){
-    timeLabel = "End at" + hhmm(ending)
-    }
-	timeLabel
-}
-
-//fomrats time to readable format for time label
 private hhmm(time, fmt = "h:mm a")
 {
 	def t = timeToday(time, location.timeZone)
@@ -357,29 +227,19 @@ private hhmm(time, fmt = "h:mm a")
 	f.format(t)
 }
 
-//sets complete/not complete for the setup section on the main dynamic page
-def greyedOut(){
-	def result = ""
-    if (switches) {
-    	result = "complete"	
-    }
-    result
+private getTimeLabel()
+{
+	(starting && ending) ? hhmm(starting) + "-" + hhmm(ending, "h:mm a z") : ""
 }
 
-//sets complete/not complete for the settings section on the main dynamic page
-def greyedOutSettings(){
-	def result = ""
-    if (starting || ending || days || falseAlarmThreshold) {
-    	result = "complete"	
-    }
-    result
-}
+private anyoneIsHome() {
+  def result = false
 
-//sets complete/not complete for time restriction section in settings
-def greyedOutTime(starting, ending){
-	def result = ""
-    if (starting || ending) {
-    	result = "complete"	
-    }
-    result
+  if(people.findAll { it?.currentPresence == "present" }) {
+    result = true
+  }
+
+  log.debug("anyoneIsHome: ${result}")
+
+  return result
 }
