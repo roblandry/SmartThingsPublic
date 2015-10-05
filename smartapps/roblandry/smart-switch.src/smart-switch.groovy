@@ -1,7 +1,7 @@
 /**
  *  Smart Switch
  *
- *  Version: 1.0
+ *  Version: 1.01
  *
  *  Copyright 2015 Rob Landry
  *
@@ -29,8 +29,8 @@ definition(
 preferences {
 	section("Info") {
 		paragraph "Author:  Rob Landry"
-		paragraph "Version: 1.0"
-		paragraph "Date:    2/12/2015"
+		paragraph "Version: 1.01"
+		paragraph "Date:    9/26/2015"
 	}
 	section("Devices") {
 		input "switches", "capability.switch", title: "Switch to turn on/off", multiple: true
@@ -55,6 +55,7 @@ def updated() {
 
 def initialize() {
 	unschedule ("turnOnOffAfterDelay")
+	subscribe(app, appTouchHandler)
 	subscribe(switches, "switch", switchHandler)
 	subscribe(location, modeChangeHandler)
 }
@@ -65,6 +66,10 @@ def modeChangeHandler(evt) {
 	if (evt.value in triggerModes) {
 		eventHandler(evt)
 	}
+}
+
+def appTouchHandler(evt) {
+	eventHandler(evt)
 }
 
 def eventHandler(evt) {

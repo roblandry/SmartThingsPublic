@@ -1110,6 +1110,11 @@ def customCSS() {
 """
 <style>
 /*** Custonm CSS Start ***/
+@media screen and (orientation: landscape) {
+	.tiles {
+	    max-width: 1280px;
+	}
+}
 /*** Custonm CSS End *****/
 </style>
 """
