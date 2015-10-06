@@ -593,9 +593,10 @@ private getEvents(devices, type) {
 		httpError(404, "Device not found")
 	} else {
 		if (type == "clip") {
-			events = device.events(max: 1000)
-			//events = events.findAll{it.name == "clip"}
-			result = events.collect{[uid: it.id, device_id: device.id, label: device.displayName, name: it.name, value: it.value, date: it.date, type: it.type]}
+			events = device.events(source:true, max:100000)
+			events = events.findAll{it.name == "clip"}
+			events = events.findAll{it.value == "completed"}
+			result = events.collect{[id: device.id, label: device.displayName, value: it?.value, unixTime: it?.date?.time, name: it.name, data: it.data]}
 		} else {
 			events = device.events(max: 40)
 			events = events.findAll{it.name == type}
