@@ -69,6 +69,8 @@ def modeChangeHandler(evt) {
 }
 
 def appTouchHandler(evt) {
+	log.debug "Unschedule turnoffafterdelay"
+	unschedule("turnOnOffAfterDelay")
 	eventHandler(evt)
 }
 

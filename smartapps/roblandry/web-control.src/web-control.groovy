@@ -594,6 +594,7 @@ private getEvents(devices, type) {
 	} else {
 		if (type == "clip") {
 			events = device.events(source:true, max:100000)
+			//events = device.events(source:true, max:all)
 			events = events.findAll{it.name == "clip"}
 			events = events.findAll{it.value == "completed"}
 			result = events.collect{[id: device.id, label: device.displayName, value: it?.value, unixTime: it?.date?.time, name: it.name, data: it.data]}
