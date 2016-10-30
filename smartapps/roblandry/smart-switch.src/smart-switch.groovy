@@ -1,9 +1,9 @@
 /**
  *  Smart Switch
  *
- *  Version: 1.01
+ *  Version: 1.1
  *
- *  Copyright 2015 Rob Landry
+ *  Copyright 2016 Rob Landry
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -29,8 +29,8 @@ definition(
 preferences {
 	section("Info") {
 		paragraph "Author:  Rob Landry"
-		paragraph "Version: 1.01"
-		paragraph "Date:    9/26/2015"
+		paragraph "Version: 1.1"
+		paragraph "Date:    10/30/2016"
 	}
 	section("Devices") {
 		input "switches", "capability.switch", title: "Switch to turn on/off", multiple: true
@@ -81,6 +81,9 @@ def eventHandler(evt) {
 		// This should replace any existing off schedule
 		unschedule("turnOnOffAfterDelay")
 		runIn(delayMinutes*60, "turnOnOffAfterDelay", [overwrite: false])
+        def turnOnOff = (onOff ? "on" : "off")
+        //sendNotificationEvent("${switches} will turn  ${turnOnOff} in ${delayMinutes} minute(s).")
+        //log.debug "${switches} will turn  ${turnOnOff} in ${delayMinutes} minute(s)."
 	} else {
 		turnOnOffAfterDelay()
 	}
@@ -103,11 +106,17 @@ def turnOnOffAfterDelay() {
 	if (state.startTimer) {
 		def elapsed = now() - state.startTimer
 		if (elapsed >= (delayMinutes ?: 0) * 60000L) {
+            //sendNotificationEvent("${switches} timer is up.")
 			if (onOff) {
 				switches.on()
 			} else {
 				switches.off()
 			}
-		}
+		} else {
+            //def turnOnOff = (onOff ? "on" : "off")
+            //sendNotificationEvent("Failed to turn ${turnOnOff} ${switches} in ${delayMinutes} minute(s), restarting timer for 1 minute.")
+		    unschedule("turnOnOffAfterDelay")
+		    runIn(60, "turnOnOffAfterDelay", [overwrite: false])
+        }
 	}
 }
