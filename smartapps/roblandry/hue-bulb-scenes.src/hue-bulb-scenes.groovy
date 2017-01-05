@@ -77,15 +77,18 @@ def mainPage() {
 		section("Color Settings for Hue Bulbs...") {
 			input "hues", "capability.colorControl", title: "Which Hue Bulbs?", required:false, multiple:true
 			input "color", "enum", title: "Hue Color?", required: false, multiple:false, options: [
-				"Soft White":"Soft White - Default",
-				"White":"White - Concentrate",
-				"Daylight":"Daylight - Energize",
-				"Warm White":"Warm White - Relax",
+				"Relax":"Relax",
+				"Read":"Read",
+				"Concentrate":"Concentrate",
+				"Energize":"Energize",
+				"Bright":"Bright",
+				"Dimmed":"Dimmed",
+				"Night Light":"Night Light",
 				"Red":"Red",
+				"Orange":"Orange",
+				"Yellow":"Yellow",
 				"Green":"Green",
 				"Blue":"Blue",
-				"Yellow":"Yellow",
-				"Orange":"Orange",
 				"Purple":"Purple",
 				"Pink":"Pink"]
 			input "lightLevel", "enum", title: "Light Level?", required: false, options: [10:"10%",20:"20%",30:"30%",40:"40%",50:"50%",60:"60%",70:"70%",80:"80%",90:"90%",100:"100%"]
@@ -152,13 +155,13 @@ private ifSet(Map options, String name, String capability) {
 }
 
 private def getRoutineNames() {
-    def routines = location.helloHome?.getPhrases().collect() { it.label }
-    return routines.sort()
+	def routines = location.helloHome?.getPhrases().collect() { it.label }
+	return routines.sort()
 }
 
 private def getModeNames() {
-    def modeTo = location.modes?.collect() { it.name }
-    return modeTo.sort()
+	def modeTo = location.modes?.collect() { it.name }
+	return modeTo.sort()
 }
 
 def installed() {
@@ -244,37 +247,68 @@ private takeAction(evt) {
 	state.previous = [:]
 
 	//*****Hue
-	def hueColor = 0
-	def saturation = 100
+	def hueColor = 13
+	def saturation = 56
+	def hueLevel
+	//h, s, l
+	//Relax 12,78 57
+	//Read 13, 48, 100
+	//Concentrate 60, 6, 100
+	//Energize 63,30, 100
+	//Bright 13, 56, 100
+	//Dimmed 13, 56, 30
+	//Night Light 13, 56, 1
 
 	switch(color) {
-		case "White":
-			hueColor = 52
-			saturation = 19
+		case "Relax":
+			hueColor = 12
+			saturation = 78
+			hueLevel = 57
 			break;
-		case "Daylight":
-			hueColor = 53
-			saturation = 91
+		case "Read":
+			hueColor = 13
+			saturation = 48
+			hueLevel = 100
 			break;
-		case "Soft White":
-			hueColor = 23
+		case "Concentrate":
+			hueColor = 60
+			saturation = 6
+			hueLevel = 100
+			break;
+		case "Energize":
+			hueColor = 63
+			saturation = 30
+			hueLevel = 100
+			break;
+		case "Bright":
+			hueColor = 13
 			saturation = 56
+			hueLevel = 100
 			break;
-		case "Warm White":
-			hueColor = 20
-			saturation = 80 //83
+		case "Dimmed":
+			hueColor = 13
+			saturation = 56
+			hueLevel = 30
 			break;
-		case "Blue":
-			hueColor = 70
+		case "Night Light":
+			hueColor = 13
+			saturation = 56
+			hueLevel = 1
 			break;
-		case "Green":
-			hueColor = 39
+		case "Red":
+			hueColor = 100
+			break;
+		case "Orange":
+			hueColor = 10
 			break;
 		case "Yellow":
 			hueColor = 25
 			break;
-		case "Orange":
-			hueColor = 10
+		case "Green":
+			hueColor = 39
+			break;
+		case "Blue":
+			hueColor = 70
 			break;
 		case "Purple":
 			hueColor = 75
@@ -282,21 +316,25 @@ private takeAction(evt) {
 		case "Pink":
 			hueColor = 83
 			break;
-		case "Red":
-			hueColor = 100
-			break;
 	}
 
+	if (lightLevel) {
+		hueLevel = lightLevel as Integer
+	} else if (!hueLevel) {
+		hueLevel = 100
+	}
+
+	//log.debug "hueLevel: $hueLevel"
 	hues.each {
 		state.previous[it.id] = [
-			"switch": it.currentValue("switch"),
+			"name": it.displayName,
 			"level" : it.currentValue("level"),
 			"hue": it.currentValue("hue"),
 			"saturation": it.currentValue("saturation")
 		]
 	}
 
-	def newValue = [hue: hueColor, saturation: saturation, level: lightLevel as Integer ?: 100]
+	def newValue = [hue: hueColor, saturation: saturation, level: hueLevel]
 	//log.debug "Hue Current Values = $state.previous, Hue New Values = $newValue"
 
 	hues*.setColor(newValue)
@@ -336,7 +374,7 @@ private takeAction(evt) {
 
 	//log.debug "switchOff current values = $state.previous"
 	switchOff*.off()
-    
+
 	//Change Mode to
 	if (modeTo) {
 		setMode(modeTo)
@@ -439,20 +477,20 @@ private def setMode(name) {
 }
 
 private def setAlarmMode(name) {
-    log.trace "Setting alarm system mode to \'${name}\'"
+	log.trace "Setting alarm system mode to \'${name}\'"
 
-    def event = [
-        name:           "alarmSystemStatus",
-        value:          name,
-        isStateChange:  true,
-        displayed:      true,
-        description:    "alarm system status is ${name}",
-    ]
+	def event = [
+		name:		"alarmSystemStatus",
+		value:		name,
+		isStateChange:  true,
+		displayed:	true,
+		description:	"alarm system status is ${name}",
+	]
 
-    sendLocationEvent(event)
+	sendLocationEvent(event)
 }
 
 private def setRoutine(name) {
-    log.trace "Executing Routine \'${name}\'"
-    location.helloHome.execute(name)
+	log.trace "Executing Routine \'${name}\'"
+	location.helloHome.execute(name)
 }
